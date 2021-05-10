@@ -1,10 +1,19 @@
-import React, { useState, useRef, useEffect } from "react";
+//Memo if input isnt changed saves a render
+//useState: gives array [start , setter]
+//useLayoutEffect: used when you want to read mutated elements but before browser has ainted new layout
+//useRef: used to refereance element or values
+//useDebugValue:
+//useEffect(callback function, dependancy)
+//useEffect: (callback function used when state is changed, '[]' = only use when page is loaded, '[i]' = run when i is changed, not using [] runs the function everytime state is changed )
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import "./App.scss";
 import NewName from "./components/newName";
 import Children from "./components/newChild";
 import Item from "./components/item";
 import UseList from "./hooks/useList";
 import Input from "./components/input";
+import SecondChild from "./components/secondChild";
+import UseCustomFetch from "./hooks/useCustomFetch";
 
 // REACT HOOKS RULES
 // -Dont call inside loops
@@ -268,7 +277,7 @@ const inputSyle = {
   marginBottom: "10px",
 };
 
-function App() {
+function NameRef() {
   const firstNameRef = useRef(null);
   const lastNameRef = useRef(null);
 
@@ -298,6 +307,88 @@ function App() {
           style={inputSyle}
           placeholder="type first name here"
         ></Input>
+      </header>
+    </div>
+  );
+}
+
+const initProfile = {
+  followers: null,
+  publicRepos: null,
+};
+
+function App() {
+  const [time, setTime] = useState(Date);
+  const [profile, setProf] = useState(initProfile);
+
+  async function getProf() {
+    const response = await fetch("https://api.github.com/users/legazy33");
+    const json = await response.json();
+
+    setProf({
+      user: json.login,
+      publicRepos: json.public_repos,
+    });
+  }
+
+  useEffect(() => {
+    let handle = setInterval(() => {
+      setTime(Date);
+    }, 1000);
+
+    return () => {
+      clearInterval(handle);
+    };
+  });
+
+  useEffect(() => {
+    getProf();
+  }, []);
+
+  //memos
+  const [i, setI] = useState(0);
+
+  function onClickHandler() {
+    setI(i + 1);
+  }
+
+  // renders only on load
+  const memoChild = useMemo(() => {
+    return <SecondChild></SecondChild>;
+  }, []);
+  //
+  //
+  const [url, setUrl] = useState(null);
+  // grabs data from customFetch hook
+  const [data, loading, error] = UseCustomFetch(url);
+  function getFollowers(e) {
+    if (e.key === "Enter") {
+      setUrl("https://api.github.com/users/" + e.target.value);
+    }
+  }
+
+  return (
+    <div className="App">
+      <header className="App-header">
+        <h2>Date & Time: {time.slice(15, 25)}</h2>
+        <h3>{`Github User: ${profile.user}`}</h3>
+        <h3>Use Memo</h3>
+        <h3>i: {i}</h3>
+        <button onClick={onClickHandler}> Increment</button>
+        <SecondChild></SecondChild>
+
+        <h3>Memo Render</h3>
+        {memoChild}
+
+        <h2>
+          GitID: <input onKeyPress={getFollowers}></input>
+          {loading && url && <div>Loading...</div>}
+          {/* if not loading show data */}
+          {!loading && data && data.json.name && (
+            <div>Name: {data.json.name}</div>
+          )}
+          {error && <div>Error: {error}</div>}
+        </h2>
       </header>
     </div>
   );
