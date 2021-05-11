@@ -6,6 +6,14 @@
 //useEffect(callback function, dependancy)
 //useEffect: (callback function used when state is changed, '[]' = only use when page is loaded, '[i]' = run when i is changed, not using [] runs the function everytime state is changed )
 import React, { useState, useRef, useEffect, useMemo } from "react";
+import {
+  BrowserRouter,
+  Route,
+  Link,
+  NavLink,
+  Redirect,
+  Prompt,
+} from "react-router-dom";
 import "./App.scss";
 import NewName from "./components/newName";
 import Children from "./components/newChild";
@@ -14,6 +22,9 @@ import UseList from "./hooks/useList";
 import Input from "./components/input";
 import SecondChild from "./components/secondChild";
 import UseCustomFetch from "./hooks/useCustomFetch";
+import About from "./pages/aboutPage";
+import HomePage from "./pages/HomePage";
+import messageContext from "./context/messageContext";
 
 // REACT HOOKS RULES
 // -Dont call inside loops
@@ -317,7 +328,7 @@ const initProfile = {
   publicRepos: null,
 };
 
-function App() {
+function Custom() {
   const [time, setTime] = useState(Date);
   const [profile, setProf] = useState(initProfile);
 
@@ -367,6 +378,11 @@ function App() {
     }
   }
 
+  function getFollowersHandle(e) {
+    if (e.key === "Enter") {
+    }
+  }
+
   return (
     <div className="App">
       <header className="App-header">
@@ -389,8 +405,91 @@ function App() {
           )}
           {error && <div>Error: {error}</div>}
         </h2>
+
+        <br></br>
       </header>
     </div>
+  );
+}
+
+function App() {
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [age, setAge] = useState(null);
+  const [message, setMessage] = useState("I am being shared");
+
+  //if clicked logged in and clicked again log out
+  function onClickLogIn(e) {
+    setLoggedIn(!loggedIn);
+  }
+
+  function onAgeChange(e) {
+    setAge(e.target.value);
+  }
+  return (
+    <BrowserRouter>
+      <messageContext.Provider value={[message, setMessage]}>
+        <ul>
+          <li>
+            <NavLink
+              to="/"
+              className="link"
+              exact
+              activeStyle={{ color: "green" }}
+            >
+              Home
+            </NavLink>
+          </li>
+          <li>
+            <NavLink
+              to="/about"
+              exact
+              className="link"
+              activeStyle={{ color: "green" }}
+            >
+              About
+            </NavLink>
+          </li>
+          <li>
+            <NavLink
+              to="/user/chris"
+              exact
+              className="link"
+              activeClassName="activeLink"
+            >
+              Profile
+            </NavLink>
+          </li>
+        </ul>
+        {/* Prompts message if user hasnt added age and tryinf to leave profile page*/}
+        <Prompt
+          when={loggedIn && !age}
+          message={(location) => {
+            return location.pathname.startsWith("/user")
+              ? true
+              : "are your sure";
+          }}
+        ></Prompt>
+        <Route path="/" exact component={HomePage} />
+        {/* if logged in change button text to log out, else button text is log in */}
+        <button onClick={onClickLogIn}>{loggedIn ? "Logout" : "Login"}</button>
+        <Route path="/about" exact component={About} />
+        <Route
+          path="/user/:username"
+          exact
+          render={({ match }) => {
+            return loggedIn ? (
+              <h1>
+                <h2>Age: {age}</h2>
+                <input type="text" value={age} onChange={onAgeChange}></input>
+                Welcome {match.params.username}
+              </h1>
+            ) : (
+              <Redirect to="/" />
+            );
+          }}
+        />
+      </messageContext.Provider>
+    </BrowserRouter>
   );
 }
 
